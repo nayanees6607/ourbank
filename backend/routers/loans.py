@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-import database, models, schemas, auth
+import models, schemas, auth
 
 router = APIRouter(
     prefix="/loans",
@@ -25,14 +24,14 @@ def get_loan_offers():
     return MOCK_LOAN_OFFERS
 
 @router.get("/", response_model=list[schemas.Loan])
-def get_loans(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
-    return current_user.loans
+async def get_loans(current_user: models.User = Depends(auth.get_current_user)):
+    return await models.Loan.find(models.Loan.user_id == str(current_user.id)).to_list()
 
 @router.post("/apply")
-def apply_loan(loan: schemas.LoanCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+async def apply_loan(loan: schemas.LoanCreate, current_user: models.User = Depends(auth.get_current_user)):
     # Simplified approval process
     new_loan = models.Loan(
-        user_id=current_user.id,
+        user_id=str(current_user.id),
         amount=loan.amount,
         loan_type=loan.loan_type,
         interest_rate=10.5, # Default rate
@@ -40,19 +39,19 @@ def apply_loan(loan: schemas.LoanCreate, current_user: models.User = Depends(aut
     )
     
     # Credit the loan amount to account
-    account = db.query(models.Account).filter(models.Account.user_id == current_user.id).first()
+    account = await models.Account.find_one(models.Account.user_id == str(current_user.id))
     if account:
         account.balance += loan.amount
+        await account.save()
         
         txn = models.Transaction(
-            account_id=account.id,
+            account_id=str(account.id),
             amount=loan.amount,
             transaction_type="deposit",
             description=f"Loan Disbursement: {loan.loan_type}"
         )
-        db.add(txn)
+        await txn.create()
     
-    db.add(new_loan)
-    db.commit()
+    await new_loan.create()
     
     return {"message": "Loan approved and disbursed", "loan": new_loan}

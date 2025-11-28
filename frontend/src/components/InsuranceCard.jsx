@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { FaShieldAlt, FaArrowRight } from 'react-icons/fa';
 
 const InsuranceCard = () => {
     const [myPolicies, setMyPolicies] = useState([]);
-    const navigate = useNavigate();
 
     useEffect(() => {
         fetchMyPolicies();
@@ -23,9 +22,11 @@ const InsuranceCard = () => {
     const totalCoverage = myPolicies.reduce((sum, p) => sum + p.coverage, 0);
 
     return (
-        <div
-            onClick={() => navigate('/insurance')}
-            className="card-base p-6 cursor-pointer group hover:border-slate-600 transition-all"
+        <Link
+            to="/insurance"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block card-base p-6 cursor-pointer group hover:border-slate-600 transition-all"
         >
             <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-rose-500/10 rounded-lg group-hover:bg-rose-500/20 transition-colors">
@@ -44,7 +45,7 @@ const InsuranceCard = () => {
             <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded w-fit">
                 <span>{myPolicies.length} Active Polic{myPolicies.length !== 1 ? 'ies' : 'y'}</span>
             </div>
-        </div>
+        </Link>
     );
 };
 

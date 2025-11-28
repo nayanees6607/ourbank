@@ -76,7 +76,7 @@ const AccountsCard = ({ refreshTrigger }) => {
                         </div>
                         <div className="space-y-1">
                             <p className="text-xs text-slate-400">Account Number</p>
-                            <p className="text-sm font-medium text-white">{account ? account.account_number : 'Loading...'}</p>
+                            <p className="text-sm font-medium text-white">{account ? `****${account.account_number.slice(-4)}` : 'Loading...'}</p>
                         </div>
                     </div>
                 </div>

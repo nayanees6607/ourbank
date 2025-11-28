@@ -4,9 +4,11 @@ from routers import auth, accounts, cards, investments, loans, insurance
 import models, database
 from websocket_manager import manager
 
-models.Base.metadata.create_all(bind=database.engine)
-
 app = FastAPI(title="Real-Time Banking API")
+
+@app.on_event("startup")
+async def on_startup():
+    await database.init_db()
 
 app.add_middleware(
     CORSMiddleware,

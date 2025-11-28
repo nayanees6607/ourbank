@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-import database, models, schemas, auth
+import models, schemas, auth
 
 router = APIRouter(
     prefix="/investments",
@@ -27,15 +26,15 @@ def get_market_data():
     return MOCK_MARKET_DATA
 
 @router.get("/", response_model=list[schemas.Investment])
-def get_investments(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
-    return current_user.investments
+async def get_investments(current_user: models.User = Depends(auth.get_current_user)):
+    return await models.Investment.find(models.Investment.user_id == str(current_user.id)).to_list()
 
 @router.post("/invest")
-def invest(investment: schemas.InvestmentCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+async def invest(investment: schemas.InvestmentCreate, current_user: models.User = Depends(auth.get_current_user)):
     if investment.amount < 500:
         raise HTTPException(status_code=400, detail="Minimum investment amount is 500")
     
-    account = db.query(models.Account).filter(models.Account.user_id == current_user.id).first() # Default to first account
+    account = await models.Account.find_one(models.Account.user_id == str(current_user.id))
     if not account:
         raise HTTPException(status_code=404, detail="No account found")
         
@@ -44,6 +43,7 @@ def invest(investment: schemas.InvestmentCreate, current_user: models.User = Dep
         
     # Deduct balance
     account.balance -= investment.amount
+    await account.save()
     
     # Create investment record
     # Find price from mock data
@@ -51,7 +51,7 @@ def invest(investment: schemas.InvestmentCreate, current_user: models.User = Dep
     quantity = investment.amount / price
     
     new_investment = models.Investment(
-        user_id=current_user.id,
+        user_id=str(current_user.id),
         investment_type=investment.investment_type,
         symbol=investment.symbol,
         quantity=quantity,
@@ -61,14 +61,63 @@ def invest(investment: schemas.InvestmentCreate, current_user: models.User = Dep
     
     # Transaction
     txn = models.Transaction(
-        account_id=account.id,
+        account_id=str(account.id),
         amount=-investment.amount,
         transaction_type="withdrawal",
         description=f"Investment in {investment.symbol}"
     )
     
-    db.add(new_investment)
-    db.add(txn)
-    db.commit()
+    await new_investment.create()
+    await txn.create()
     
     return {"message": "Investment successful"}
+
+@router.post("/sell")
+async def sell(sell_request: schemas.InvestmentSell, current_user: models.User = Depends(auth.get_current_user)):
+    if sell_request.quantity <= 0:
+        raise HTTPException(status_code=400, detail="Quantity must be greater than 0")
+
+    # Find the investment
+    investment = await models.Investment.find_one(
+        models.Investment.user_id == str(current_user.id),
+        models.Investment.symbol == sell_request.symbol
+    )
+
+    if not investment:
+        raise HTTPException(status_code=404, detail="Investment not found")
+
+    if investment.quantity < sell_request.quantity:
+        raise HTTPException(status_code=400, detail="Insufficient quantity")
+
+    # Get current market price
+    price = next((item["price"] for item in MOCK_MARKET_DATA if item["symbol"] == sell_request.symbol), 100.0)
+    
+    # Calculate total value
+    total_value = sell_request.quantity * price
+
+    # Update investment quantity
+    investment.quantity -= sell_request.quantity
+    
+    if investment.quantity <= 0.000001: # Floating point tolerance
+        await investment.delete()
+    else:
+        await investment.save()
+
+    # Credit user account
+    account = await models.Account.find_one(models.Account.user_id == str(current_user.id))
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    account.balance += total_value
+    await account.save()
+
+    # Create transaction record
+    txn = models.Transaction(
+        account_id=str(account.id),
+        amount=total_value,
+        transaction_type="deposit",
+        description=f"Sold {sell_request.quantity:.4f} {sell_request.symbol}"
+    )
+    await txn.create()
+
+    return {"message": "Sale successful", "amount_credited": total_value}

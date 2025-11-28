@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-import database, models, schemas, auth
+import models, schemas, auth
 
 router = APIRouter(
     prefix="/insurance",
@@ -25,17 +24,17 @@ def get_available_policies():
     return MOCK_POLICIES
 
 @router.get("/", response_model=list[schemas.Insurance])
-def get_my_policies(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
-    return current_user.insurances
+async def get_my_policies(current_user: models.User = Depends(auth.get_current_user)):
+    return await models.Insurance.find(models.Insurance.user_id == str(current_user.id)).to_list()
 
 @router.post("/buy")
-def buy_policy(purchase: schemas.PolicyPurchase, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+async def buy_policy(purchase: schemas.PolicyPurchase, current_user: models.User = Depends(auth.get_current_user)):
     policy_id = purchase.policy_id
     policy = next((p for p in MOCK_POLICIES if p["id"] == policy_id), None)
     if not policy:
         raise HTTPException(status_code=404, detail="Policy not found")
         
-    account = db.query(models.Account).filter(models.Account.user_id == current_user.id).first()
+    account = await models.Account.find_one(models.Account.user_id == str(current_user.id))
     if not account:
         raise HTTPException(status_code=404, detail="No account found")
         
@@ -44,9 +43,10 @@ def buy_policy(purchase: schemas.PolicyPurchase, current_user: models.User = Dep
         
     # Deduct premium
     account.balance -= policy["premium"]
+    await account.save()
     
     new_insurance = models.Insurance(
-        user_id=current_user.id,
+        user_id=str(current_user.id),
         policy_name=policy["name"],
         policy_type=policy["type"],
         premium=policy["premium"],
@@ -54,14 +54,13 @@ def buy_policy(purchase: schemas.PolicyPurchase, current_user: models.User = Dep
     )
     
     txn = models.Transaction(
-        account_id=account.id,
+        account_id=str(account.id),
         amount=-policy["premium"],
         transaction_type="withdrawal",
         description=f"Insurance Premium: {policy['name']}"
     )
     
-    db.add(new_insurance)
-    db.add(txn)
-    db.commit()
+    await new_insurance.create()
+    await txn.create()
     
     return {"message": "Policy purchased successfully", "insurance": new_insurance}

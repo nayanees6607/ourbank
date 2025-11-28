@@ -5,14 +5,17 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Point your app to Postgres/Redis/RabbitMQ inside the compose network
-      DATABASE_URL: postgresql://app:app@db:5432/app
+      # Point your app to Mongo/Redis/RabbitMQ inside the compose network
+      MONGO_URL: mongodb+srv://nayaneesh_cherry:cherry010607@cluster0.b0gfzri.mongodb.net/?appName=Cluster0
+      DB_NAME: banking_app
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - ./backend:/app
     depends_on:
-      db:
-        condition: service_healthy
+      mongo:
+        condition: service_started
       redis:
         condition: service_healthy
       rabbitmq:
@@ -26,28 +29,12 @@ services:
     depends_on:
       - backend
 
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: app
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d app -h 127.0.0.1"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
   redis:
     image: redis:7
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -56,17 +43,17 @@ services:
     image: rabbitmq:3-management
     ports:
       - "5672:5672"
-      - "15672:15672"   # management UI
+      - "15672:15672" # management UI
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 20
 
   celery_worker:
     build:
-      context: ./backend   # reuse backend image if Celery code lives there
-    command: ["celery", "-A", "worker", "worker", "-l", "info"]
+      context: ./backend # reuse backend image if Celery code lives there
+    command: [ "celery", "-A", "worker", "worker", "-l", "info" ]
     environment:
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -110,5 +97,4 @@ services:
       - elasticsearch
 
 volumes:
-  pgdata: {}
   mongodata: {}

@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { FaChartLine, FaArrowRight } from 'react-icons/fa';
 
 const InvestCard = () => {
     const [investments, setInvestments] = useState([]);
-    const navigate = useNavigate();
 
     useEffect(() => {
         fetchInvestments();
@@ -23,9 +22,11 @@ const InvestCard = () => {
     const totalValue = investments.reduce((sum, inv) => sum + (inv.quantity * inv.current_value), 0);
 
     return (
-        <div
-            onClick={() => navigate('/invest')}
-            className="card-base p-6 cursor-pointer group hover:border-slate-600 transition-all"
+        <Link
+            to="/invest"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block card-base p-6 cursor-pointer group hover:border-slate-600 transition-all"
         >
             <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-emerald-500/10 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
@@ -45,7 +46,7 @@ const InvestCard = () => {
                 <span>+2.4%</span>
                 <span className="text-slate-500">this month</span>
             </div>
-        </div>
+        </Link>
     );
 };
 

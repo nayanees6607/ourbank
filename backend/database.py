@@ -1,18 +1,28 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import os
+from motor.motor_asyncio import AsyncIOMotorClient
+from beanie import init_beanie
+import models
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/banking")
+async def init_db():
+    # Get MongoDB URL from env or use default local
+    # For Atlas, the user will provide the full connection string in env
+    MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+    DB_NAME = os.getenv("DB_NAME", "banking_app")
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    client = AsyncIOMotorClient(MONGO_URL)
+    database = client[DB_NAME]
+    
+    # Initialize Beanie with the Document classes
+    await init_beanie(
+        database=database,
+        document_models=[
+            models.User,
+            models.Account,
+            models.Transaction,
+            models.Card,
+            models.FixedDeposit,
+            models.Loan,
+            models.Insurance,
+            models.Investment
+        ]
+    )
