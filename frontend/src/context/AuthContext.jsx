@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
             return true;
         } catch (error) {
             console.error("Login failed", error);
-            return false;
+            throw error; // Re-throw so Login component can catch and display error
         }
     };
 
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
             return true;
         } catch (error) {
             console.error("Registration failed", error);
-            return false;
+            throw error; // Re-throw so Register component can catch and display error
         }
     };
 

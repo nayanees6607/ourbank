@@ -25,11 +25,11 @@ const Register = () => {
             setError('Opening balance must be at least 500');
             return;
         }
-        const success = await register(formData);
-        if (success) {
+        try {
+            await register(formData);
             navigate('/set-pin');
-        } else {
-            setError('Registration failed. Email might be taken.');
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Registration failed. Email might be taken.');
         }
     };
 
