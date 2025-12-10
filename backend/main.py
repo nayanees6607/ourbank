@@ -15,12 +15,20 @@ load_dotenv()
 # Setup Logging
 host = os.getenv('LOGSTASH_HOST', 'localhost')
 port = int(os.getenv('LOGSTASH_PORT', 5000))
+enable_logstash = os.getenv('ENABLE_LOGSTASH', 'false').lower() == 'true'
 
 logger = logging.getLogger('python-logstash-logger')
 logger.setLevel(logging.INFO)
+
 # Avoid adding multiple handlers if reloaded
-if not logger.handlers:
-    logger.addHandler(AsynchronousLogstashHandler(host, port, database_path=None))
+if enable_logstash and not logger.handlers:
+    try:
+        logger.addHandler(AsynchronousLogstashHandler(host, port, database_path=None))
+        print(f"Logstash logging enabled on {host}:{port}")
+    except Exception as e:
+        print(f"Failed to initialize Logstash handler: {e}")
+elif not enable_logstash:
+    print("Logstash logging disabled (ENABLE_LOGSTASH!=true)")
 
 app = FastAPI(title="Real-Time Banking API")
 
