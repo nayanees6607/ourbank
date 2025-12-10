@@ -8,6 +8,8 @@ const BorrowCard = () => {
 
     useEffect(() => {
         fetchLoans();
+        const interval = setInterval(fetchLoans, 20000); // Refresh every 20 seconds
+        return () => clearInterval(interval);
     }, []);
 
     const fetchLoans = async () => {
@@ -19,7 +21,8 @@ const BorrowCard = () => {
         }
     };
 
-    const totalDebt = loans.reduce((sum, loan) => sum + loan.amount, 0);
+    const activeLoans = loans.filter(loan => loan.status === 'active');
+    const totalDebt = activeLoans.reduce((sum, loan) => sum + loan.amount, 0);
 
     return (
         <Link
@@ -39,11 +42,11 @@ const BorrowCard = () => {
 
             <h3 className="text-slate-400 text-sm font-medium mb-1">Outstanding Debt</h3>
             <p className="text-2xl font-bold text-white mb-4">
-                ₹{totalDebt.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                ₹{totalDebt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
 
             <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded w-fit">
-                <span>{loans.length} Active Loan{loans.length !== 1 ? 's' : ''}</span>
+                <span>{activeLoans.length} Active Loan{activeLoans.length !== 1 ? 's' : ''}</span>
             </div>
         </Link>
     );

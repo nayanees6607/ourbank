@@ -29,6 +29,12 @@ async def get_my_policies(current_user: models.User = Depends(auth.get_current_u
 
 @router.post("/buy")
 async def buy_policy(purchase: schemas.PolicyPurchase, current_user: models.User = Depends(auth.get_current_user)):
+    # Verify transaction PIN
+    if not current_user.pin_hash:
+        raise HTTPException(status_code=400, detail="Transaction PIN not set. Please set your PIN first.")
+    if not auth.verify_password(purchase.pin, current_user.pin_hash):
+        raise HTTPException(status_code=401, detail="Incorrect transaction PIN")
+    
     policy_id = purchase.policy_id
     policy = next((p for p in MOCK_POLICIES if p["id"] == policy_id), None)
     if not policy:

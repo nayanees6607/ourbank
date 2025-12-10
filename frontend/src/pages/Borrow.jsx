@@ -13,6 +13,10 @@ const Borrow = () => {
     const [loanOffers, setLoanOffers] = useState([]);
     const [selectedOfferType, setSelectedOfferType] = useState('personal');
 
+    // PIN verification states
+    const [showPinModal, setShowPinModal] = useState(false);
+    const [pin, setPin] = useState('');
+
     useEffect(() => {
         fetchLoans();
         fetchOffers();
@@ -41,52 +45,72 @@ const Borrow = () => {
             alert("Please enter a valid amount");
             return;
         }
+        setPin('');
+        setShowPinModal(true);
+    };
+
+    const confirmApplyLoan = async () => {
+        if (pin.length !== 4) {
+            alert("Please enter a 4-digit PIN");
+            return;
+        }
 
         setLoading(true);
         try {
             await api.post('/loans/apply', {
                 amount: parseFloat(amount),
-                loan_type: selectedOfferType
+                loan_type: selectedOfferType,
+                pin: pin
             });
-            alert('Loan application submitted!');
+            alert('Loan application submitted for approval!');
             setAmount('');
+            setShowPinModal(false);
+            setPin('');
             fetchLoans();
         } catch (error) {
-            alert('Loan application failed');
+            alert('Loan application failed: ' + (error.response?.data?.detail || error.message));
         } finally {
             setLoading(false);
         }
     };
 
-    const totalDebt = loans.reduce((sum, loan) => sum + loan.amount, 0);
+    const totalDebt = loans.filter(loan => loan.status === 'active').reduce((sum, loan) => sum + loan.amount, 0);
     const selectedOffer = loanOffers.find(o => o.type === selectedOfferType);
 
     return (
-        <div className="min-h-screen bg-[#0B1221] text-slate-200 pb-20 font-inter relative">
+        <div className="min-h-screen bg-[#0B1221] text-slate-200 relative overflow-hidden">
+            {/* Premium Background Effects */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-[#635BFF]/20 to-transparent rounded-full blur-3xl"></div>
+                <div className="absolute top-1/2 -left-40 w-80 h-80 bg-gradient-to-br from-emerald-500/15 to-transparent rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-gradient-to-br from-[#00D4FF]/10 to-transparent rounded-full blur-3xl"></div>
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2260%22%20height%3D%2260%22%3E%3Cpath%20d%3D%22M60%200H0v60%22%20fill%3D%22none%22%20stroke%3D%22rgba(255,255,255,0.03)%22/%3E%3C/svg%3E')] opacity-50"></div>
+            </div>
+
             <Navbar />
-            <main className="container mx-auto px-6 py-10">
-                <div className="flex justify-between items-end border-b border-slate-800/60 pb-6 mb-10">
+
+            <main className="relative z-10 container mx-auto px-6 pt-24 pb-20">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
                     <div>
-                        <h1 className="text-3xl font-bold text-white tracking-tight">Borrow</h1>
-                        <div className="flex items-center gap-2 mt-1">
-                            <p className="text-slate-400 text-sm">Manage your loans and credit lines</p>
-                            <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
-                                Client: {user?.full_name || 'Client'}
-                            </span>
-                        </div>
+                        <p className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Loan Management</p>
+                        <h1 className="text-4xl font-bold text-white tracking-tight">Borrow</h1>
+                        <p className="text-slate-400 mt-2">Manage your loans and credit lines</p>
                     </div>
-                    <div className="text-right">
-                        <p className="text-3xl font-bold text-white tracking-tight">
-                            ₹{totalDebt.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-sm text-slate-400">Total Outstanding Debt</p>
+                    <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-[1px] rounded-2xl">
+                        <div className="bg-[#0B1221] rounded-2xl px-6 py-4">
+                            <p className="text-sm text-slate-400 mb-1">Total Outstanding</p>
+                            <p className="text-3xl font-bold text-white tracking-tight">
+                                ₹{totalDebt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Loan Application */}
                     <div className="lg:col-span-1">
-                        <div className="card-base p-6 sticky top-24">
+                        <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl sticky top-24">
                             <h3 className="text-lg font-semibold text-white mb-4">Apply for a Loan</h3>
                             <div className="space-y-4">
                                 <div>
@@ -107,7 +131,7 @@ const Borrow = () => {
                                     <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">Loan Amount (₹)</label>
                                     <input
                                         type="number"
-                                        placeholder={`Max ₹${selectedOffer?.max_amount.toLocaleString()}`}
+                                        placeholder={`Max ₹${selectedOffer?.max_amount.toLocaleString('en-IN')}`}
                                         value={amount}
                                         onChange={(e) => setAmount(e.target.value)}
                                         className="input-field"
@@ -153,15 +177,18 @@ const Borrow = () => {
                                                 <h4 className="text-xl font-bold text-white capitalize">{loan.loan_type.replace('_', ' ')} Loan</h4>
                                                 <p className="text-xs text-slate-400 mt-1">ID: #{loan.id}</p>
                                             </div>
-                                            <span className="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-1 rounded border border-emerald-500/20">
-                                                Active
+                                            <span className={`text-xs px-2 py-1 rounded border ${loan.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                loan.status === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                    'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                                }`}>
+                                                {loan.status}
                                             </span>
                                         </div>
 
                                         <div className="space-y-3">
                                             <div>
                                                 <p className="text-xs text-slate-500 uppercase">Principal Amount</p>
-                                                <p className="text-2xl font-mono font-bold text-white">₹{loan.amount.toLocaleString()}</p>
+                                                <p className="text-2xl font-mono font-bold text-white">₹{loan.amount.toLocaleString('en-IN')}</p>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800/50">
@@ -214,7 +241,7 @@ const Borrow = () => {
                         <div className="space-y-4">
                             <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
                                 <p className="text-xs text-slate-500 uppercase mb-1">Principal Amount</p>
-                                <p className="text-3xl font-mono font-bold text-white">₹{selectedLoan.amount.toLocaleString()}</p>
+                                <p className="text-3xl font-mono font-bold text-white">₹{selectedLoan.amount.toLocaleString('en-IN')}</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -243,7 +270,7 @@ const Borrow = () => {
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm text-slate-400">Next Payment Amount</span>
-                                    <span className="text-sm font-medium text-white">₹{(selectedLoan.amount * 0.1).toLocaleString()}</span>
+                                    <span className="text-sm font-medium text-white">₹{(selectedLoan.amount * 0.1).toLocaleString('en-IN')}</span>
                                 </div>
                             </div>
 
@@ -252,6 +279,60 @@ const Borrow = () => {
                                 className="w-full btn-primary mt-4"
                             >
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PIN Verification Modal */}
+            {showPinModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 w-full max-w-sm shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => { setShowPinModal(false); setPin(''); }}
+                            className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+                        >
+                            ✕
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">🔐</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">Enter PIN to Confirm</h3>
+                            <p className="text-slate-400 text-sm">
+                                Confirm loan application for ₹{parseFloat(amount || 0).toLocaleString('en-IN')}
+                            </p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-medium text-amber-400 mb-2 text-center">🔐 Enter 4-digit PIN</label>
+                            <input
+                                type="password"
+                                maxLength={4}
+                                value={pin}
+                                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                                onKeyDown={(e) => e.key === 'Enter' && confirmApplyLoan()}
+                                className="input-field text-center text-xl tracking-[0.5em] font-mono"
+                                placeholder="••••"
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setShowPinModal(false); setPin(''); }}
+                                className="flex-1 py-3 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 transition-colors font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmApplyLoan}
+                                disabled={loading || pin.length !== 4}
+                                className="flex-1 py-3 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? 'Submitting...' : 'Apply Now'}
                             </button>
                         </div>
                     </div>

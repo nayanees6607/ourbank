@@ -10,6 +10,11 @@ import Accounts from './pages/Accounts';
 import Invest from './pages/Invest';
 import Borrow from './pages/Borrow';
 import Insurance from './pages/Insurance';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminLogin from './pages/AdminLogin';
+import AdminLoans from './pages/AdminLoans';
+import AdminCards from './pages/AdminCards';
+import ForgotPassword from './pages/ForgotPassword';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = React.useContext(AuthContext);
@@ -23,6 +28,10 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/admin/loans" element={<PrivateRoute><AdminLoans /></PrivateRoute>} />
+          <Route path="/admin/cards" element={<PrivateRoute><AdminCards /></PrivateRoute>} />
           <Route path="/register" element={<Register />} />
           <Route path="/set-pin" element={<PrivateRoute><SetPin /></PrivateRoute>} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
@@ -31,6 +40,7 @@ function App() {
           <Route path="/invest" element={<PrivateRoute><Invest /></PrivateRoute>} />
           <Route path="/borrow" element={<PrivateRoute><Borrow /></PrivateRoute>} />
           <Route path="/insurance" element={<PrivateRoute><Insurance /></PrivateRoute>} />
+          <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>

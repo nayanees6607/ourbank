@@ -8,6 +8,8 @@ const MyCards = () => {
 
     useEffect(() => {
         fetchCards();
+        const interval = setInterval(fetchCards, 20000); // Refresh every 20 seconds
+        return () => clearInterval(interval);
     }, []);
 
     const fetchCards = async () => {
@@ -37,7 +39,7 @@ const MyCards = () => {
 
             <h3 className="text-slate-400 text-sm font-medium mb-1">My Cards</h3>
             <p className="text-2xl font-bold text-white mb-4">
-                {cards.length} <span className="text-sm font-normal text-slate-400">Active</span>
+                {cards.filter(c => c.status === 'active').length} <span className="text-sm font-normal text-slate-400">Active</span>
             </p>
 
             <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded w-fit">

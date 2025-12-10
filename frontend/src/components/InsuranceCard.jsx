@@ -39,7 +39,7 @@ const InsuranceCard = () => {
 
             <h3 className="text-slate-400 text-sm font-medium mb-1">Total Coverage</h3>
             <p className="text-2xl font-bold text-white mb-4">
-                ₹{totalCoverage.toLocaleString('en-US')}
+                ₹{totalCoverage.toLocaleString('en-IN')}
             </p>
 
             <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded w-fit">

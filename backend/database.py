@@ -1,17 +1,20 @@
 import os
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 import models
 
-import certifi
-
 async def init_db():
-    # Get MongoDB URL from env or use default local
-    # For Atlas, the user will provide the full connection string in env
+    # Use local MongoDB by default, set MONGO_URL env var for Atlas
     MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
-    DB_NAME = os.getenv("DB_NAME", "banking_app")
+    DB_NAME = os.getenv("DB_NAME", "vitta_bank")
 
-    client = AsyncIOMotorClient(MONGO_URL, tlsCAFile=certifi.where())
+    # Use certifi for SSL certificate verification (required for MongoDB Atlas on macOS)
+    client = AsyncIOMotorClient(
+        MONGO_URL,
+        serverSelectionTimeoutMS=10000,
+        tlsCAFile=certifi.where()
+    )
     database = client[DB_NAME]
     
     # Initialize Beanie with the Document classes
@@ -25,6 +28,7 @@ async def init_db():
             models.FixedDeposit,
             models.Loan,
             models.Insurance,
-            models.Investment
+            models.Investment,
+            models.DeletionRequest
         ]
     )

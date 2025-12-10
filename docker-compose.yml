@@ -1,100 +1,145 @@
+version: '3.8'
+
 services:
+  # --- Application Stack ---
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
+    container_name: banking_backend
+    environment:
+      - MONGO_URL=mongodb+srv://nayaneesh6607:cherry010607@cluster0.vwvmdno.mongodb.net/?appName=Cluster0
+      - DB_NAME=vitta_bank
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - LOGSTASH_HOST=logstash
+      - LOGSTASH_PORT=5000
     ports:
       - "8000:8000"
-    environment:
-      # Point your app to Mongo/Redis/RabbitMQ inside the compose network
-      MONGO_URL: mongodb+srv://nayaneesh_cherry:cherry010607@cluster0.b0gfzri.mongodb.net/?appName=Cluster0
-      DB_NAME: banking_app
-      REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-    volumes:
-      - ./backend:/app
     depends_on:
-      mongo:
-        condition: service_started
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "8080:80"
-    depends_on:
-      - backend
-
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672" # management UI
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
-      interval: 5s
-      timeout: 5s
-      retries: 20
+      - mongo
+      - redis
+      - rabbitmq
+      - logstash
+    networks:
+      - banking_net
 
   celery_worker:
     build:
-      context: ./backend # reuse backend image if Celery code lives there
-    command: [ "celery", "-A", "worker", "worker", "-l", "info" ]
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: banking_celery
+    command: celery -A celery_app.celery_app worker --loglevel=info
     environment:
-      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      - MONGO_URL=mongodb+srv://nayaneesh6607:cherry010607@cluster0.vwvmdno.mongodb.net/?appName=Cluster0
+      - DB_NAME=vitta_bank
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - LOGSTASH_HOST=logstash
+      - LOGSTASH_PORT=5000
     depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - backend
+      - redis
+      - rabbitmq
+    networks:
+      - banking_net
 
+  # --- Data Layer ---
   mongo:
-    image: mongo:6
+    image: mongo:latest
+    container_name: banking_mongo
     ports:
       - "27017:27017"
     volumes:
-      - mongodata:/data/db
+      - mongo_data:/data/db
+    networks:
+      - banking_net
 
+  redis:
+    image: redis:alpine
+    container_name: banking_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - banking_net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: banking_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - banking_net
+
+  # --- ELK Stack (Logging) ---
   elasticsearch:
-    image: elasticsearch:7.17.10
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    container_name: banking_elasticsearch
     environment:
+      - node.name=elasticsearch
       - discovery.type=single-node
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
-    # Helpful on Docker Desktop/Mac too
-    sysctls:
-      vm.max_map_count: 262144
-
-  kibana:
-    image: kibana:7.17.10
-    ports:
-      - "5601:5601"
-    depends_on:
-      - elasticsearch
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - banking_net
 
   logstash:
-    image: logstash:7.17.10
+    image: docker.elastic.co/logstash/logstash:7.17.10
+    container_name: banking_logstash
+    volumes:
+      - ./config/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     ports:
-      - "5000:5000"
+      - "5001:5000"
       - "9600:9600"
     depends_on:
       - elasticsearch
+    networks:
+      - banking_net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.10
+    container_name: banking_kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - banking_net
+
+  # --- Monitoring Stack ---
+  prometheus:
+    image: prom/prometheus
+    container_name: banking_prometheus
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - banking_net
+
+  grafana:
+    image: grafana/grafana
+    container_name: banking_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - banking_net
 
 volumes:
-  mongodata: {}
+  mongo_data:
+  es_data:
+
+
+networks:
+  banking_net:
+    driver: bridge

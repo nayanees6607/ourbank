@@ -1,18 +1,18 @@
 from celery_app import celery_app
 import time
-import random
 
-@celery_app.task
-def send_email_notification(email: str, subject: str, message: str):
+@celery_app.task(name="tasks.send_welcome_email")
+def send_welcome_email(email: str):
     # Simulate email sending
+    print(f"Sending welcome email to {email}...")
     time.sleep(2)
-    print(f"Email sent to {email}: {subject} - {message}")
-    return "Email sent"
+    print(f"Welcome email sent to {email}!")
+    return f"Welcome email sent to {email}"
 
-@celery_app.task
-def update_investment_values():
-    # Simulate updating investment values
-    # In real app, fetch from external API and update DB
-    print("Updating investment values...")
-    time.sleep(1)
-    return "Investments updated"
+@celery_app.task(name="tasks.generate_report")
+def generate_report(user_id: str):
+    # Simulate heavy processing
+    print(f"Generating report for user {user_id}...")
+    time.sleep(5)
+    print(f"Report generated for user {user_id}!")
+    return f"Report generated for user {user_id}"

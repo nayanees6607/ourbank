@@ -11,5 +11,7 @@ celery
 python-dotenv
 email-validator
 requests
+reportlab
+prometheus-fastapi-instrumentator
+python-logstash-async
 certifi
-dnspython

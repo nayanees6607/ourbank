@@ -20,6 +20,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     user_name: str
+    is_admin: bool
 
 class TokenData(BaseModel):
     email: Optional[str] = None
@@ -27,6 +28,8 @@ class TokenData(BaseModel):
 class User(UserBase):
     id: Optional[Any] = None
     is_active: bool
+    is_admin: bool
+    
     
     @field_serializer('id')
     def serialize_id(self, id: Any, _info):
@@ -40,6 +43,10 @@ class PinSetup(BaseModel):
 
 class PinVerify(BaseModel):
     pin: str
+
+class PromoteUser(BaseModel):
+    user_id: str
+    admin_password: str
 
 class Account(BaseModel):
     id: Optional[Any] = None
@@ -72,10 +79,12 @@ class TransferRequest(BaseModel):
     from_account_id: str
     to_account_number: str
     amount: float
+    pin: str  # 4-digit transaction PIN
 
 class FixedDepositCreate(BaseModel):
     account_id: str
     amount: float
+    pin: str  # 4-digit transaction PIN
 
 class Card(BaseModel):
     id: Optional[Any] = None
@@ -83,6 +92,7 @@ class Card(BaseModel):
     expiry_date: str
     cvv: str
     card_type: str
+    status: str
     
     @field_serializer('id')
     def serialize_id(self, id: Any, _info):
@@ -110,10 +120,12 @@ class InvestmentCreate(BaseModel):
     symbol: str
     amount: float
     investment_type: str
+    pin: str  # 4-digit transaction PIN
 
 class InvestmentSell(BaseModel):
     symbol: str
     quantity: float
+    pin: str  # 4-digit transaction PIN
 
 class Loan(BaseModel):
     id: Optional[Any] = None
@@ -132,6 +144,7 @@ class Loan(BaseModel):
 class LoanCreate(BaseModel):
     amount: float
     loan_type: str
+    pin: str  # 4-digit transaction PIN
 
 class Insurance(BaseModel):
     id: Optional[Any] = None
@@ -148,8 +161,44 @@ class Insurance(BaseModel):
         from_attributes = True
 
 class PolicyPurchase(BaseModel):
-    policy_id: int # Keep as int for mock ID
+    policy_id: int  # Keep as int for mock ID
+    pin: str  # 4-digit transaction PIN
 
 class PasswordChange(BaseModel):
     old_password: str
     new_password: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class VerifyResetOTP(BaseModel):
+    email: EmailStr
+    otp: str
+
+class ResetPassword(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
+class PasswordChangeWithOTP(BaseModel):
+    otp: str
+    new_password: str
+
+class DeletionRequestCreate(BaseModel):
+    reason: Optional[str] = None
+
+class DeletionRequest(BaseModel):
+    id: Optional[Any] = None
+    user_id: str
+    user_email: str
+    user_name: str
+    reason: Optional[str] = None
+    status: str
+    created_at: datetime
+    
+    @field_serializer('id')
+    def serialize_id(self, id: Any, _info):
+        return str(id) if id else None
+
+    class Config:
+        from_attributes = True

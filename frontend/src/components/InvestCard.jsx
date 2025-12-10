@@ -8,6 +8,8 @@ const InvestCard = () => {
 
     useEffect(() => {
         fetchInvestments();
+        const interval = setInterval(fetchInvestments, 20000); // Refresh every 20 seconds
+        return () => clearInterval(interval);
     }, []);
 
     const fetchInvestments = async () => {
@@ -39,7 +41,7 @@ const InvestCard = () => {
 
             <h3 className="text-slate-400 text-sm font-medium mb-1">Total Investments</h3>
             <p className="text-2xl font-bold text-white mb-4">
-                ₹{totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                ₹{totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
 
             <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded w-fit">

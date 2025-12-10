@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import PinModal from './PinModal';
 
 const TransferMoney = () => {
     const [toAccount, setToAccount] = useState('');
     const [amount, setAmount] = useState('');
+    const [pin, setPin] = useState('');
     const [myAccountId, setMyAccountId] = useState(null);
     const [loading, setLoading] = useState(false);
-
-    const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+    const [showPinInput, setShowPinInput] = useState(false);
 
     useEffect(() => {
         const fetchAccount = async () => {
@@ -31,20 +30,28 @@ const TransferMoney = () => {
             alert("Please enter both account number and amount");
             return;
         }
-        setIsPinModalOpen(true);
+        setShowPinInput(true);
     };
 
     const handleTransfer = async () => {
+        if (pin.length !== 4) {
+            alert("Please enter a 4-digit PIN");
+            return;
+        }
+
         setLoading(true);
         try {
             await api.post('/accounts/transfer', {
                 from_account_id: myAccountId,
                 to_account_number: toAccount,
-                amount: parseFloat(amount)
+                amount: parseFloat(amount),
+                pin: pin
             });
             alert('Transfer successful!');
             setToAccount('');
             setAmount('');
+            setPin('');
+            setShowPinInput(false);
         } catch (error) {
             alert('Transfer failed: ' + (error.response?.data?.detail || error.message));
         } finally {
@@ -53,8 +60,8 @@ const TransferMoney = () => {
     };
 
     return (
-        <>
-            <div className="flex flex-col md:flex-row gap-4 items-end bg-slate-900/50 p-4 rounded-xl border border-slate-800/60">
+        <div className="flex flex-col gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800/60">
+            <div className="flex flex-col md:flex-row gap-4 items-end">
                 <div className="flex-1 w-full">
                     <label className="block text-xs font-medium text-slate-400 mb-1.5 ml-1">To Account Number</label>
                     <input
@@ -75,22 +82,47 @@ const TransferMoney = () => {
                         placeholder="0.00"
                     />
                 </div>
-                <button
-                    onClick={initiateTransfer}
-                    disabled={loading}
-                    className="btn-primary h-[38px] w-full md:w-auto whitespace-nowrap px-6 shadow-lg shadow-blue-900/20"
-                >
-                    {loading ? 'Sending...' : 'Send Money'}
-                </button>
+                {!showPinInput && (
+                    <button
+                        onClick={initiateTransfer}
+                        disabled={loading}
+                        className="btn-primary h-[38px] w-full md:w-auto whitespace-nowrap px-6 shadow-lg shadow-blue-900/20"
+                    >
+                        Send Money
+                    </button>
+                )}
             </div>
 
-            <PinModal
-                isOpen={isPinModalOpen}
-                onClose={() => setIsPinModalOpen(false)}
-                onSuccess={handleTransfer}
-                title="Authorize Transfer"
-            />
-        </>
+            {showPinInput && (
+                <div className="flex flex-col md:flex-row gap-4 items-end border-t border-slate-700 pt-4 mt-2">
+                    <div className="flex-1 w-full md:w-auto">
+                        <label className="block text-xs font-medium text-amber-400 mb-1.5 ml-1">🔐 Enter 4-digit PIN to authorize</label>
+                        <input
+                            type="password"
+                            maxLength={4}
+                            value={pin}
+                            onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                            className="input-field bg-slate-950/80 text-center text-xl tracking-[0.5em] font-mono"
+                            placeholder="••••"
+                            autoFocus
+                        />
+                    </div>
+                    <button
+                        onClick={handleTransfer}
+                        disabled={loading || pin.length !== 4}
+                        className="btn-primary h-[38px] w-full md:w-auto whitespace-nowrap px-6 shadow-lg shadow-blue-900/20 bg-gradient-to-r from-emerald-500 to-emerald-600 disabled:opacity-50"
+                    >
+                        {loading ? 'Processing...' : '✓ Confirm Transfer'}
+                    </button>
+                    <button
+                        onClick={() => { setShowPinInput(false); setPin(''); }}
+                        className="h-[38px] px-4 text-slate-400 hover:text-white transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            )}
+        </div>
     );
 };
 

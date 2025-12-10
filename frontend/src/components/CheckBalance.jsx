@@ -67,7 +67,7 @@ const CheckBalance = () => {
 
                             <div className="mb-6">
                                 <p className="text-slate-400 text-sm mb-1">Available Balance</p>
-                                <p className="text-4xl font-bold text-emerald-400">₹{balance?.toLocaleString()}</p>
+                                <p className="text-4xl font-bold text-emerald-400">₹{balance?.toLocaleString('en-IN')}</p>
                             </div>
 
                             <button onClick={closeBalance} className="text-slate-500 hover:text-slate-300 text-sm">Close</button>

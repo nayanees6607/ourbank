@@ -1,65 +1,201 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #0B1221;
-  --bg-secondary: #0f172a;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent-blue: #005EB8;
-  --border-color: rgba(51, 65, 85, 0.5);
+  --bg-primary: #0A2540;
+  --text-primary: #ffffff;
+  --text-secondary: #adbdcc;
+  --accent-primary: #635BFF;
+  --accent-secondary: #00D4FF;
 }
 
 body {
   background-color: var(--bg-primary);
-  background-image:
-    radial-gradient(circle at 15% 50%, rgba(0, 94, 184, 0.08), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(124, 58, 237, 0.08), transparent 25%);
   color: var(--text-primary);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Mesh Gradient Background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(99, 91, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(255, 61, 113, 0.1) 0%, transparent 40%);
+  z-index: -1;
+  animation: bgShift 20s ease-in-out infinite alternate;
+}
+
+@keyframes bgShift {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(-2%, -2%);
+  }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(10, 37, 64, 0.5);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.5);
-  border-radius: 10px;
-  transition: background 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(71, 85, 105, 0.8);
+  background: rgba(255, 255, 255, 0.2);
 }
 
-/* Utility classes for the new theme */
-.card-base {
-  @apply bg-slate-900/60 backdrop-blur-md border border-white/5 rounded-2xl shadow-xl hover:shadow-2xl hover:border-white/10 transition-all duration-300;
+/* Utility classes */
+/* Vibrant Stripe-like Mesh Gradient */
+/* Vibrant Stripe-like Mesh Gradient */
+/* Vibrant Stripe-like Mesh Gradient */
+/* Vibrant Stripe-like Mesh Gradient */
+.stripe-mesh-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  overflow: hidden;
+  z-index: 0;
+  /* Removed skew/transform to fix layout glitches */
 }
 
-.btn-primary {
-  @apply bg-gradient-to-r from-[#005EB8] to-[#004c94] hover:from-[#004c94] hover:to-[#003da5] text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 active:scale-[0.98] border border-white/10;
+.stripe-mesh-bg::before,
+.stripe-mesh-bg::after {
+  content: '';
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  top: -20%;
+  left: -20%;
+  filter: blur(80px);
+  opacity: 0.85;
+  /* Slightly increased opacity for vibrancy */
+  animation: mesh-move 20s infinite alternate ease-in-out, hue-oscillate 45s infinite ease-in-out;
 }
 
-.btn-secondary {
-  @apply bg-slate-800/50 hover:bg-slate-700/50 text-slate-200 font-medium px-4 py-2 rounded-lg transition-all duration-200 border border-white/5 hover:border-white/10 backdrop-blur-sm;
+/* Screenshot Colors: Cyan (Left), Purple (Mid), Vibrant Pink/Red (Right) */
+.stripe-mesh-bg::before {
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(144, 224, 255, 0.85) 0%, transparent 60%),
+    /* Cyan #90e0ff */
+    radial-gradient(circle at 50% 20%, rgba(169, 96, 238, 0.85) 0%, transparent 50%),
+    /* Purple #a960ee */
+    radial-gradient(circle at 85% 80%, rgba(255, 51, 61, 0.8) 0%, transparent 50%);
+  /* Red/Pink #ff333d */
+  animation-duration: 25s, 45s;
 }
 
-.input-field {
-  @apply bg-slate-950/40 border border-white/5 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#005EB8] focus:ring-1 focus:ring-[#005EB8]/50 transition-all duration-200 w-full backdrop-blur-sm;
+.stripe-mesh-bg::after {
+  background-image:
+    radial-gradient(circle at 90% 10%, rgba(255, 51, 61, 0.7) 0%, transparent 60%),
+    /* Red/Pink #ff333d */
+    radial-gradient(circle at 10% 90%, rgba(67, 97, 238, 0.6) 0%, transparent 50%),
+    /* Royal Blue */
+    radial-gradient(circle at 50% 80%, rgba(255, 203, 87, 0.6) 0%, transparent 50%);
+  /* Warm Yellow accent */
+  animation-direction: alternate-reverse, normal;
+  animation-duration: 30s, 45s;
 }
 
-.table-header {
-  @apply px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-left bg-slate-900/30 border-b border-white/5;
+/* Gentle oscillation to keep the vibrant pink/purple theme alive */
+@keyframes hue-oscillate {
+  0% {
+    filter: hue-rotate(0deg) blur(80px);
+  }
+
+  50% {
+    filter: hue-rotate(20deg) blur(80px);
+  }
+
+  100% {
+    filter: hue-rotate(0deg) blur(80px);
+  }
+}
+
+@keyframes mesh-move {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+
+  25% {
+    transform: translate(15%, 20%) rotate(10deg) scale(1.3);
+  }
+
+  50% {
+    transform: translate(-10%, 15%) rotate(-10deg) scale(0.7);
+  }
+
+  75% {
+    transform: translate(-20%, -10%) rotate(15deg) scale(1.2);
+  }
+
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+}
+
+/* White Glass Card (High Opacity) */
+.stripe-glass-card {
+  @apply bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl;
 }
 
 .table-cell {
   @apply px-4 py-3 text-sm text-slate-300 border-b border-white/5 whitespace-nowrap;
+}
+
+/* Glassmorphism & Utilities */
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl;
+}
+
+.stripe-card {
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 rounded-2xl transition-all duration-300 hover:-translate-y-1;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
+}
+
+.stripe-card:hover {
+  box-shadow: 0 30px 60px -15px rgba(50, 50, 93, 0.15);
+}
+
+.btn-primary {
+  @apply bg-[#635BFF] text-white font-medium px-6 py-3 rounded-full transition-all duration-300 hover:-translate-y-0.5 active:scale-95 active:translate-y-0 text-[15px] tracking-wide flex items-center justify-center gap-2;
+  box-shadow: 0 4px 14px 0 rgba(99, 91, 255, 0.39);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(99, 91, 255, 0.23);
+}
+
+.btn-secondary {
+  @apply bg-white/10 text-white font-medium px-6 py-3 rounded-full transition-all duration-300 hover:bg-white/20 hover:-translate-y-0.5 active:scale-95 border border-white/10 backdrop-blur-sm text-[15px];
+}
+
+.input-field {
+  @apply w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#635BFF]/50 focus:border-[#635BFF] transition-all duration-200 text-slate-700 placeholder-slate-400 text-[15px];
+}
+
+.section-title {
+  @apply text-3xl font-bold text-slate-900 tracking-tight;
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#3932a3] to-[#006680] font-extrabold;
 }

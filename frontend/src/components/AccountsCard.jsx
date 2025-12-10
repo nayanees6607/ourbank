@@ -164,7 +164,7 @@ const AccountsCard = ({ refreshTrigger }) => {
                                         {txn.description}
                                     </td>
                                     <td className={`py-3 text-sm font-mono font-medium text-right whitespace-nowrap ${txn.amount > 0 ? 'text-emerald-400' : 'text-slate-200'}`}>
-                                        {txn.amount > 0 ? '+' : ''}₹{Math.abs(txn.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        {txn.amount > 0 ? '+' : ''}₹{Math.abs(txn.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                     </td>
                                 </tr>
                             ))}

@@ -17,6 +17,11 @@ const Invest = () => {
     const [sellQuantity, setSellQuantity] = useState('');
     const [maxSellQuantity, setMaxSellQuantity] = useState(0);
 
+    // PIN verification states
+    const [showPinModal, setShowPinModal] = useState(false);
+    const [pin, setPin] = useState('');
+    const [pendingAction, setPendingAction] = useState(null); // 'buy' or 'sell'
+
 
 
     const sellInputRef = React.useRef(null);
@@ -68,6 +73,16 @@ const Invest = () => {
             alert("Please select a stock/fund");
             return;
         }
+        setPendingAction('buy');
+        setPin('');
+        setShowPinModal(true);
+    };
+
+    const confirmInvest = async () => {
+        if (pin.length !== 4) {
+            alert("Please enter a 4-digit PIN");
+            return;
+        }
 
         setProcessing(true);
         try {
@@ -77,11 +92,14 @@ const Invest = () => {
             await api.post('/investments/invest', {
                 symbol: selectedSymbol,
                 amount: parseFloat(amount),
-                investment_type: type
+                investment_type: type,
+                pin: pin
             });
 
             alert('Investment successful!');
             setAmount('');
+            setShowPinModal(false);
+            setPin('');
             fetchData();
         } catch (error) {
             const detail = error.response?.data?.detail;
@@ -108,16 +126,29 @@ const Invest = () => {
             alert("Insufficient quantity");
             return;
         }
+        setPendingAction('sell');
+        setPin('');
+        setShowPinModal(true);
+    };
+
+    const confirmSell = async () => {
+        if (pin.length !== 4) {
+            alert("Please enter a 4-digit PIN");
+            return;
+        }
 
         setProcessing(true);
         try {
             await api.post('/investments/sell', {
                 symbol: sellSymbol,
-                quantity: parseFloat(sellQuantity)
+                quantity: parseFloat(sellQuantity),
+                pin: pin
             });
 
             alert('Sale successful!');
             setSellModalOpen(false);
+            setShowPinModal(false);
+            setPin('');
             fetchData();
         } catch (error) {
             const detail = error.response?.data?.detail;
@@ -135,24 +166,32 @@ const Invest = () => {
     }, 0);
 
     return (
-        <div className="min-h-screen bg-[#0B1221] text-slate-200 pb-20 font-inter relative">
+        <div className="min-h-screen bg-[#0B1221] text-slate-200 relative overflow-hidden">
+            {/* Premium Background Effects */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-[#00D4FF]/20 to-transparent rounded-full blur-3xl"></div>
+                <div className="absolute top-1/2 -left-40 w-80 h-80 bg-gradient-to-br from-[#635BFF]/15 to-transparent rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full blur-3xl"></div>
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2260%22%20height%3D%2260%22%3E%3Cpath%20d%3D%22M60%200H0v60%22%20fill%3D%22none%22%20stroke%3D%22rgba(255,255,255,0.03)%22/%3E%3C/svg%3E')] opacity-50"></div>
+            </div>
+
             <Navbar />
-            <main className="container mx-auto px-6 py-10">
-                <div className="flex justify-between items-end border-b border-slate-800/60 pb-6 mb-10">
+
+            <main className="relative z-10 container mx-auto px-6 pt-24 pb-20">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
                     <div>
-                        <h1 className="text-3xl font-bold text-white tracking-tight">Investments</h1>
-                        <div className="flex items-center gap-2 mt-1">
-                            <p className="text-slate-400 text-sm">Manage your portfolio and explore markets</p>
-                            <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
-                                Client: {user?.full_name || 'Client'}
-                            </span>
-                        </div>
+                        <p className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Portfolio Management</p>
+                        <h1 className="text-4xl font-bold text-white tracking-tight">Investments</h1>
+                        <p className="text-slate-400 mt-2">Manage your portfolio and explore markets</p>
                     </div>
-                    <div className="text-right">
-                        <p className="text-3xl font-bold text-white tracking-tight">
-                            ₹{totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-sm text-slate-400">Total Portfolio Value</p>
+                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-[1px] rounded-2xl">
+                        <div className="bg-[#0B1221] rounded-2xl px-6 py-4">
+                            <p className="text-sm text-slate-400 mb-1">Total Portfolio Value</p>
+                            <p className="text-3xl font-bold text-white tracking-tight">
+                                ₹{totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -160,7 +199,7 @@ const Invest = () => {
                     {/* Market Data & Trade */}
                     <div className="lg:col-span-2 space-y-8">
                         {/* Trade Form */}
-                        <div className="card-base p-6">
+                        <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
                             <h3 className="text-lg font-semibold text-white mb-4">Place Order</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                                 <div>
@@ -241,7 +280,7 @@ const Invest = () => {
                                                     <p className="text-xs text-slate-400 capitalize">{inv.investment_type}</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="font-mono font-medium text-sm text-white">₹{currentValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                                                    <p className="font-mono font-medium text-sm text-white">₹{currentValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                                                     <p className={`text-[10px] ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
                                                         {isPositive ? '+' : ''}{gainLoss.toFixed(2)}%
                                                     </p>
@@ -303,6 +342,62 @@ const Invest = () => {
                                     {processing ? 'Processing...' : 'Confirm Sell'}
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PIN Verification Modal */}
+            {showPinModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 w-full max-w-sm shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => { setShowPinModal(false); setPin(''); }}
+                            className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+                        >
+                            ✕
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">🔐</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">Enter PIN to Confirm</h3>
+                            <p className="text-slate-400 text-sm">
+                                {pendingAction === 'buy'
+                                    ? `Confirm investment of ₹${parseFloat(amount).toLocaleString('en-IN')} in ${selectedSymbol}`
+                                    : `Confirm sale of ${parseFloat(sellQuantity).toFixed(4)} ${sellSymbol}`}
+                            </p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-medium text-amber-400 mb-2 text-center">🔐 Enter 4-digit PIN</label>
+                            <input
+                                type="password"
+                                maxLength={4}
+                                value={pin}
+                                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                                onKeyDown={(e) => e.key === 'Enter' && (pendingAction === 'buy' ? confirmInvest() : confirmSell())}
+                                className="input-field text-center text-xl tracking-[0.5em] font-mono"
+                                placeholder="••••"
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setShowPinModal(false); setPin(''); }}
+                                className="flex-1 py-3 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 transition-colors font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={pendingAction === 'buy' ? confirmInvest : confirmSell}
+                                disabled={processing || pin.length !== 4}
+                                className="flex-1 py-3 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {processing ? 'Processing...' : 'Confirm'}
+                            </button>
                         </div>
                     </div>
                 </div>

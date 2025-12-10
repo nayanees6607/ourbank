@@ -89,7 +89,7 @@ const CreditScore = () => {
             <div className="mt-4 pt-4 border-t border-slate-800/50 flex justify-between items-center text-xs">
                 <span className="text-slate-500">Net Liquid Assets</span>
                 <span className={`font-mono font-medium ${netWorth >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {netWorth >= 0 ? '+' : '-'}₹{Math.abs(netWorth).toLocaleString()}
+                    {netWorth >= 0 ? '+' : '-'}₹{Math.abs(netWorth).toLocaleString('en-IN')}
                 </span>
             </div>
         </div>

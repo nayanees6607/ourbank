@@ -19,6 +19,7 @@ class User(Document):
     hashed_password: str
     pin_hash: Optional[str] = None
     is_active: bool = True
+    is_admin: bool = False
     
     class Settings:
         name = "users"
@@ -49,7 +50,10 @@ class Card(Document):
     expiry_date: str
     cvv: str
     card_type: str
+    card_name: str = ""  # For credit card varieties (e.g., "Platinum Rewards")
     pin_hash: str
+    status: str = "pending"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
     
     class Settings:
         name = "cards"
@@ -69,7 +73,8 @@ class Loan(Document):
     amount: float
     loan_type: str
     interest_rate: float
-    status: str = "active"
+    status: str = "pending"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
     
     class Settings:
         name = "loans"
@@ -94,3 +99,15 @@ class Investment(Document):
     
     class Settings:
         name = "investments"
+
+class DeletionRequest(Document):
+    user_id: str
+    user_email: str
+    user_name: str
+    reason: Optional[str] = None
+    status: str = "pending"  # pending, approved, rejected
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    processed_at: Optional[datetime] = None
+    
+    class Settings:
+        name = "deletion_requests"
